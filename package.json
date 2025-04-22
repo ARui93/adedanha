@@ -1,11 +1,10 @@
 {
-    "name": "letter-game",
-    "version": "1.0.0",
-    "description": "Jogo de sorteio de letras do alfabeto",
-    "scripts": {
-      "start": "serve ./public"
-    },
-    "dependencies": {
-      "serve": "^14.2.0"
-    }
+  "name": "adedanha",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "serve public"
+  },
+  "dependencies": {
+    "serve": "^14.2.0"
   }
+}
