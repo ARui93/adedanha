@@ -14,6 +14,7 @@
       justify-content: center;
       align-items: center;
       height: 100vh;
+      transition: background-color 0.5s;
     }
 
     .container {
@@ -24,6 +25,7 @@
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
       width: 80%;
       max-width: 500px;
+      transition: background-color 0.5s;
     }
 
     .letter-display {
@@ -35,6 +37,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: color 0.5s;
     }
 
     .timer {
@@ -42,6 +45,7 @@
       margin: 1rem 0;
       color: #555;
       font-family: monospace;
+      transition: color 0.5s;
     }
 
     .btn {
@@ -76,6 +80,26 @@
       background-color: #cccccc;
       cursor: not-allowed;
     }
+
+    /* Classes para o efeito de piscar */
+    .red-alert {
+      animation: blink 1s infinite;
+    }
+
+    @keyframes blink {
+      0% { background-color: #ff0000; color: white; }
+      50% { background-color: #f0f0f0; color: black; }
+      100% { background-color: #ff0000; color: white; }
+    }
+
+    .red-alert .container {
+      background-color: #ffcccc;
+    }
+
+    .red-alert .letter-display,
+    .red-alert .timer {
+      color: white;
+    }
   </style>
 </head>
 <body>
@@ -94,7 +118,8 @@
       remainingLetters: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),
       timer: null,
       timeLeft: 300, // 5 minutos em segundos
-      currentLetter: null
+      currentLetter: null,
+      blinkInterval: null
     };
 
     // Elementos da UI
@@ -102,6 +127,7 @@
     const timerDisplay = document.querySelector('.timer');
     const startButton = document.querySelector('.start-btn');
     const resetButton = document.querySelector('.reset-btn');
+    const body = document.querySelector('body');
 
     // Funções do jogo
     function getRandomLetter() {
@@ -125,8 +151,17 @@
       timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     }
 
+    function startBlinking() {
+      body.classList.add('red-alert');
+    }
+
+    function stopBlinking() {
+      body.classList.remove('red-alert');
+    }
+
     function startTimer() {
       clearInterval(gameState.timer);
+      stopBlinking();
       gameState.timeLeft = 300;
       updateTimerDisplay();
       
@@ -137,19 +172,22 @@
         if (gameState.timeLeft <= 0) {
           clearInterval(gameState.timer);
           startButton.disabled = false;
+          startBlinking();
         }
       }, 1000);
     }
 
     function resetGame() {
       clearInterval(gameState.timer);
+      stopBlinking();
       gameState = {
         started: false,
         usedLetters: [],
         remainingLetters: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),
         timer: null,
         timeLeft: 300,
-        currentLetter: null
+        currentLetter: null,
+        blinkInterval: null
       };
       
       letterDisplay.textContent = '?';
