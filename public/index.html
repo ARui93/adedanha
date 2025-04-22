@@ -4,10 +4,176 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sorteio de Letras</title>
-  <link rel="stylesheet" href="/src/styles.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background-color: #f0f0f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      text-align: center;
+      background-color: white;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      width: 80%;
+      max-width: 500px;
+    }
+
+    .letter-display {
+      font-size: 8rem;
+      font-weight: bold;
+      margin: 1rem 0;
+      color: #333;
+      height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .timer {
+      font-size: 3rem;
+      margin: 1rem 0;
+      color: #555;
+      font-family: monospace;
+    }
+
+    .btn {
+      padding: 1rem 2rem;
+      margin: 0.5rem;
+      font-size: 1.2rem;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .start-btn {
+      background-color: #4CAF50;
+      color: white;
+    }
+
+    .start-btn:hover {
+      background-color: #45a049;
+    }
+
+    .reset-btn {
+      background-color: #f44336;
+      color: white;
+    }
+
+    .reset-btn:hover {
+      background-color: #d32f2f;
+    }
+
+    .btn:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+  </style>
 </head>
 <body>
-  <div id="root"></div>
-  <script src="/src/App.js"></script>
+  <div class="container">
+    <div class="letter-display">?</div>
+    <div class="timer">05:00</div>
+    <button class="btn start-btn">Iniciar Jogo</button>
+    <button class="btn reset-btn" disabled>Encerrar Jogo</button>
+  </div>
+
+  <script>
+    // Estado do jogo
+    let gameState = {
+      started: false,
+      usedLetters: [],
+      remainingLetters: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),
+      timer: null,
+      timeLeft: 300, // 5 minutos em segundos
+      currentLetter: null
+    };
+
+    // Elementos da UI
+    const letterDisplay = document.querySelector('.letter-display');
+    const timerDisplay = document.querySelector('.timer');
+    const startButton = document.querySelector('.start-btn');
+    const resetButton = document.querySelector('.reset-btn');
+
+    // Funções do jogo
+    function getRandomLetter() {
+      if (gameState.remainingLetters.length === 0) {
+        return null; // Todas as letras foram usadas
+      }
+
+      const randomIndex = Math.floor(Math.random() * gameState.remainingLetters.length);
+      const letter = gameState.remainingLetters[randomIndex];
+      
+      // Remove a letra do array de letras disponíveis
+      gameState.remainingLetters.splice(randomIndex, 1);
+      gameState.usedLetters.push(letter);
+      
+      return letter;
+    }
+
+    function updateTimerDisplay() {
+      const minutes = Math.floor(gameState.timeLeft / 60);
+      const seconds = gameState.timeLeft % 60;
+      timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    function startTimer() {
+      clearInterval(gameState.timer);
+      gameState.timeLeft = 300;
+      updateTimerDisplay();
+      
+      gameState.timer = setInterval(() => {
+        gameState.timeLeft--;
+        updateTimerDisplay();
+        
+        if (gameState.timeLeft <= 0) {
+          clearInterval(gameState.timer);
+          startButton.disabled = false;
+        }
+      }, 1000);
+    }
+
+    function resetGame() {
+      clearInterval(gameState.timer);
+      gameState = {
+        started: false,
+        usedLetters: [],
+        remainingLetters: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),
+        timer: null,
+        timeLeft: 300,
+        currentLetter: null
+      };
+      
+      letterDisplay.textContent = '?';
+      timerDisplay.textContent = '05:00';
+      startButton.disabled = false;
+      resetButton.disabled = true;
+    }
+
+    // Event listeners
+    startButton.addEventListener('click', () => {
+      gameState.started = true;
+      gameState.currentLetter = getRandomLetter();
+      
+      if (gameState.currentLetter) {
+        letterDisplay.textContent = gameState.currentLetter;
+        startTimer();
+        startButton.disabled = true;
+        resetButton.disabled = false;
+      } else {
+        letterDisplay.textContent = 'Todas as letras foram usadas!';
+      }
+    });
+
+    resetButton.addEventListener('click', resetGame);
+  </script>
 </body>
 </html>
