@@ -4,214 +4,510 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sorteio de Letras</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;700&display=swap" rel="stylesheet">
   <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0e0e0e;
+      --card: #1a1a1a;
+      --accent: #e8ff47;
+      --text: #f5f5f0;
+      --muted: #666;
+      --danger: #ff3b30;
+      --border: #2a2a2a;
+    }
+
     body {
-      margin: 0;
-      padding: 0;
-      font-family: Arial, sans-serif;
-      background-color: #f0f0f0;
+      font-family: 'IBM Plex Mono', monospace;
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
       display: flex;
-      justify-content: center;
       align-items: center;
-      height: 100vh;
-      transition: background-color 0.5s;
+      justify-content: center;
+      padding: 1rem;
+      overflow: hidden;
+    }
+
+    /* Grain texture overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 100;
+      opacity: 0.4;
     }
 
     .container {
-      text-align: center;
-      background-color: white;
-      padding: 2rem;
-      border-radius: 10px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      width: 80%;
-      max-width: 500px;
-      transition: background-color 0.5s;
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
     }
 
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 0;
+    }
+
+    .title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.8rem;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      line-height: 1;
+    }
+
+    .letter-counter {
+      font-size: 0.75rem;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+    }
+
+    .letter-counter span {
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    /* Main card */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-top: none;
+      padding: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: var(--accent);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.4s ease;
+    }
+
+    .card.active::before {
+      transform: scaleX(1);
+    }
+
+    /* Letter display */
     .letter-display {
-      font-size: 8rem;
-      font-weight: bold;
-      margin: 1rem 0;
-      color: #333;
-      height: 200px;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(7rem, 30vw, 11rem);
+      line-height: 1;
+      color: var(--accent);
+      text-align: center;
+      min-height: 130px;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: color 0.5s;
+      position: relative;
+      transition: color 0.3s;
+      user-select: none;
     }
 
-    .timer {
-      font-size: 3rem;
-      margin: 1rem 0;
-      color: #555;
-      font-family: monospace;
-      transition: color 0.5s;
+    .letter-display.placeholder {
+      color: #2a2a2a;
+    }
+
+    .letter-display.animate-in {
+      animation: popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes popIn {
+      0%   { transform: scale(0.4) rotate(-8deg); opacity: 0; }
+      100% { transform: scale(1)   rotate(0deg);  opacity: 1; }
+    }
+
+    /* Timer */
+    .timer-section {
+      margin-top: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .timer-label {
+      font-size: 0.65rem;
+      color: var(--muted);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    .timer-display {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 3.5rem;
+      letter-spacing: 0.05em;
+      line-height: 1;
+      transition: color 0.3s;
+    }
+
+    .timer-display.danger {
+      color: var(--danger);
+      animation: pulse 0.5s infinite alternate;
+    }
+
+    @keyframes pulse {
+      from { opacity: 1; }
+      to   { opacity: 0.4; }
+    }
+
+    /* Progress bar */
+    .progress-bar {
+      width: 100%;
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 0.5rem;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      width: 100%;
+      transition: width 1s linear, background 0.3s;
+    }
+
+    .progress-fill.danger {
+      background: var(--danger);
+    }
+
+    /* Used letters track */
+    .used-section {
+      padding: 1rem 2rem;
+      border: 1px solid var(--border);
+      border-top: none;
+      background: #141414;
+    }
+
+    .used-label {
+      font-size: 0.6rem;
+      color: var(--muted);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 0.6rem;
+    }
+
+    .used-letters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+    }
+
+    .used-letter-chip {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 0.85rem;
+      background: var(--border);
+      color: var(--muted);
+      padding: 0.1rem 0.4rem;
+      letter-spacing: 0.05em;
+      animation: chipIn 0.25s ease;
+    }
+
+    @keyframes chipIn {
+      from { transform: scale(0); opacity: 0; }
+      to   { transform: scale(1); opacity: 1; }
+    }
+
+    /* Buttons */
+    .btn-row {
+      display: flex;
+      gap: 0;
+      border: 1px solid var(--border);
+      border-top: none;
     }
 
     .btn {
-      padding: 1rem 2rem;
-      margin: 0.5rem;
-      font-size: 1.2rem;
+      flex: 1;
+      padding: 1rem;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
       border: none;
-      border-radius: 5px;
       cursor: pointer;
-      transition: background-color 0.3s;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
     }
 
-    .start-btn {
-      background-color: #4CAF50;
-      color: white;
+    .btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: white;
+      opacity: 0;
+      transition: opacity 0.15s;
     }
 
-    .start-btn:hover {
-      background-color: #45a049;
+    .btn:active::after { opacity: 0.1; }
+
+    .btn-start {
+      background: var(--accent);
+      color: #0e0e0e;
     }
 
-    .reset-btn {
-      background-color: #f44336;
-      color: white;
+    .btn-start:hover:not(:disabled) {
+      background: #f5ff70;
     }
 
-    .reset-btn:hover {
-      background-color: #d32f2f;
+    .btn-reset {
+      background: transparent;
+      color: var(--muted);
+      border-left: 1px solid var(--border);
+    }
+
+    .btn-reset:hover:not(:disabled) {
+      background: #1f1f1f;
+      color: var(--text);
     }
 
     .btn:disabled {
-      background-color: #cccccc;
+      opacity: 0.3;
       cursor: not-allowed;
     }
 
-    /* Classes para o efeito de piscar */
-    .red-alert {
-      animation: blink 1s infinite;
+    /* Status message */
+    .status {
+      font-size: 0.7rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      min-height: 1.2em;
+      text-align: center;
+      padding: 0.5rem 2rem 0;
     }
 
-    @keyframes blink {
-      0% { background-color: #ff0000; color: white; }
-      50% { background-color: #f0f0f0; color: black; }
-      100% { background-color: #ff0000; color: white; }
+    .status.highlight {
+      color: var(--accent);
     }
 
-    .red-alert .container {
-      background-color: #ffcccc;
+    /* End state */
+    .letter-display.end {
+      font-size: 2rem;
+      color: var(--accent);
+      letter-spacing: 0.05em;
     }
 
-    .red-alert .letter-display,
-    .red-alert .timer {
-      color: white;
+    /* Timer expired overlay */
+    .card.expired .letter-display {
+      color: var(--danger);
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="letter-display">?</div>
-    <div class="timer">05:00</div>
-    <button class="btn start-btn">Iniciar Jogo</button>
-    <button class="btn reset-btn" disabled>Encerrar Jogo</button>
+
+<div class="container">
+  <div class="header">
+    <div class="title">Sorteio<br>de Letras</div>
+    <div class="letter-counter">Restam <span id="remaining-count">26</span> letras</div>
   </div>
 
-  <script>
-    // Estado do jogo
-    let gameState = {
-      started: false,
+  <div class="card" id="main-card">
+    <div class="letter-display placeholder" id="letter-display">?</div>
+    <div class="timer-section">
+      <div class="timer-label">Tempo restante</div>
+      <div class="timer-display" id="timer-display">05:00</div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="used-section">
+    <div class="used-label">Letras usadas</div>
+    <div class="used-letters" id="used-letters">—</div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-start" id="start-btn">▶ Iniciar</button>
+    <button class="btn btn-reset" id="reset-btn" disabled>↺ Reiniciar</button>
+  </div>
+
+  <div class="status" id="status">Aperte Iniciar para sortear a primeira letra</div>
+</div>
+
+<script>
+  const TOTAL_TIME = 300;
+  const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
+  let state = {
+    remainingLetters: [...ALPHABET],
+    usedLetters: [],
+    timer: null,
+    timeLeft: TOTAL_TIME,
+    timerRunning: false,
+    gameOver: false,
+  };
+
+  const letterDisplay  = document.getElementById('letter-display');
+  const timerDisplay   = document.getElementById('timer-display');
+  const progressFill   = document.getElementById('progress-fill');
+  const startBtn       = document.getElementById('start-btn');
+  const resetBtn       = document.getElementById('reset-btn');
+  const usedLettersEl  = document.getElementById('used-letters');
+  const statusEl       = document.getElementById('status');
+  const remainingCount = document.getElementById('remaining-count');
+  const mainCard       = document.getElementById('main-card');
+
+  function formatTime(s) {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+  }
+
+  function updateTimerDisplay() {
+    timerDisplay.textContent = formatTime(state.timeLeft);
+    const pct = (state.timeLeft / TOTAL_TIME) * 100;
+    progressFill.style.width = pct + '%';
+
+    const isDanger = state.timeLeft <= 30;
+    timerDisplay.classList.toggle('danger', isDanger);
+    progressFill.classList.toggle('danger', isDanger);
+  }
+
+  function clearTimer() {
+    clearInterval(state.timer);
+    state.timer = null;
+    state.timerRunning = false;
+  }
+
+  function startTimer() {
+    clearTimer();
+    state.timeLeft = TOTAL_TIME;
+    updateTimerDisplay();
+    state.timerRunning = true;
+    mainCard.classList.add('active');
+    mainCard.classList.remove('expired');
+
+    state.timer = setInterval(() => {
+      state.timeLeft--;
+      updateTimerDisplay();
+
+      if (state.timeLeft <= 0) {
+        clearTimer();
+        onTimerExpired();
+      }
+    }, 1000);
+  }
+
+  function onTimerExpired() {
+    mainCard.classList.add('expired');
+    startBtn.disabled = false;
+    startBtn.textContent = '▶ Próxima Letra';
+    setStatus('⏱ Tempo esgotado! Aperte para continuar.', false);
+  }
+
+  function drawLetter() {
+    if (state.remainingLetters.length === 0) return null;
+    const idx = Math.floor(Math.random() * state.remainingLetters.length);
+    const letter = state.remainingLetters.splice(idx, 1)[0];
+    state.usedLetters.push(letter);
+    return letter;
+  }
+
+  function renderUsedLetters() {
+    if (state.usedLetters.length === 0) {
+      usedLettersEl.innerHTML = '—';
+    } else {
+      usedLettersEl.innerHTML = state.usedLetters
+        .map(l => `<span class="used-letter-chip">${l}</span>`)
+        .join('');
+    }
+    remainingCount.textContent = state.remainingLetters.length;
+  }
+
+  function setStatus(msg, highlight = false) {
+    statusEl.textContent = msg;
+    statusEl.classList.toggle('highlight', highlight);
+  }
+
+  function handleStart() {
+    if (state.gameOver) return;
+
+    const letter = drawLetter();
+
+    if (!letter) {
+      // All letters used
+      state.gameOver = true;
+      clearTimer();
+      letterDisplay.className = 'letter-display end animate-in';
+      letterDisplay.textContent = 'FIM!';
+      timerDisplay.textContent = '—';
+      progressFill.style.width = '0%';
+      startBtn.disabled = true;
+      setStatus('🎉 Todas as 26 letras foram sorteadas!', true);
+      renderUsedLetters();
+      return;
+    }
+
+    // Show letter
+    letterDisplay.className = 'letter-display';
+    void letterDisplay.offsetWidth; // reflow for animation
+    letterDisplay.className = 'letter-display animate-in';
+    letterDisplay.textContent = letter;
+
+    renderUsedLetters();
+    startTimer();
+
+    startBtn.disabled = true;
+    resetBtn.disabled = false;
+
+    const left = state.remainingLetters.length;
+    if (left === 0) {
+      setStatus(`Letra ${state.usedLetters.length}/26 — esta é a última!`);
+    } else {
+      setStatus(`Letra ${state.usedLetters.length}/26 — ${left} restante${left !== 1 ? 's' : ''}`);
+    }
+  }
+
+  function handleReset() {
+    clearTimer();
+    state = {
+      remainingLetters: [...ALPHABET],
       usedLetters: [],
-      remainingLetters: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),
       timer: null,
-      timeLeft: 300, // 5 minutos em segundos
-      currentLetter: null,
-      blinkInterval: null
+      timeLeft: TOTAL_TIME,
+      timerRunning: false,
+      gameOver: false,
     };
 
-    // Elementos da UI
-    const letterDisplay = document.querySelector('.letter-display');
-    const timerDisplay = document.querySelector('.timer');
-    const startButton = document.querySelector('.start-btn');
-    const resetButton = document.querySelector('.reset-btn');
-    const body = document.querySelector('body');
+    letterDisplay.className = 'letter-display placeholder';
+    letterDisplay.textContent = '?';
+    timerDisplay.className = 'timer-display';
+    timerDisplay.textContent = '05:00';
+    progressFill.style.width = '100%';
+    progressFill.classList.remove('danger');
+    mainCard.classList.remove('active', 'expired');
 
-    // Funções do jogo
-    function getRandomLetter() {
-      if (gameState.remainingLetters.length === 0) {
-        return null; // Todas as letras foram usadas
-      }
+    startBtn.disabled = false;
+    startBtn.textContent = '▶ Iniciar';
+    resetBtn.disabled = true;
 
-      const randomIndex = Math.floor(Math.random() * gameState.remainingLetters.length);
-      const letter = gameState.remainingLetters[randomIndex];
-      
-      // Remove a letra do array de letras disponíveis
-      gameState.remainingLetters.splice(randomIndex, 1);
-      gameState.usedLetters.push(letter);
-      
-      return letter;
-    }
+    renderUsedLetters();
+    setStatus('Aperte Iniciar para sortear a primeira letra');
+  }
 
-    function updateTimerDisplay() {
-      const minutes = Math.floor(gameState.timeLeft / 60);
-      const seconds = gameState.timeLeft % 60;
-      timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    }
+  startBtn.addEventListener('click', handleStart);
+  resetBtn.addEventListener('click', handleReset);
 
-    function startBlinking() {
-      body.classList.add('red-alert');
-    }
-
-    function stopBlinking() {
-      body.classList.remove('red-alert');
-    }
-
-    function startTimer() {
-      clearInterval(gameState.timer);
-      stopBlinking();
-      gameState.timeLeft = 300;
-      updateTimerDisplay();
-      
-      gameState.timer = setInterval(() => {
-        gameState.timeLeft--;
-        updateTimerDisplay();
-        
-        if (gameState.timeLeft <= 0) {
-          clearInterval(gameState.timer);
-          startButton.disabled = false;
-          startBlinking();
-        }
-      }, 1000);
-    }
-
-    function resetGame() {
-      clearInterval(gameState.timer);
-      stopBlinking();
-      gameState = {
-        started: false,
-        usedLetters: [],
-        remainingLetters: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),
-        timer: null,
-        timeLeft: 300,
-        currentLetter: null,
-        blinkInterval: null
-      };
-      
-      letterDisplay.textContent = '?';
-      timerDisplay.textContent = '05:00';
-      startButton.disabled = false;
-      resetButton.disabled = true;
-    }
-
-    // Event listeners
-    startButton.addEventListener('click', () => {
-      gameState.started = true;
-      gameState.currentLetter = getRandomLetter();
-      
-      if (gameState.currentLetter) {
-        letterDisplay.textContent = gameState.currentLetter;
-        startTimer();
-        startButton.disabled = true;
-        resetButton.disabled = false;
-      } else {
-        letterDisplay.textContent = 'Todas as letras foram usadas!';
-      }
-    });
-
-    resetButton.addEventListener('click', resetGame);
-  </script>
+  // Init
+  renderUsedLetters();
+</script>
 </body>
 </html>
