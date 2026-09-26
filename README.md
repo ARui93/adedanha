@@ -1,4 +1,4 @@
-# Sorteio de Letras do Alfabeto
+# Sorteio de Letras, STOP ou ADEDANHA
 
 Aplicação web que sorteia letras do alfabeto sem repetição, com timer de 5 minutos.
 
